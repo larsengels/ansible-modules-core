@@ -1247,11 +1247,11 @@ class SunOS(User):
                     continue
                 key, value = line.split('=')
                 if key == "MINWEEKS":
-                    minweeks = value
+                    minweeks = value.rstrip('\n')
                 elif key == "MAXWEEKS":
-                    maxweeks = value
+                    maxweeks = value.rstrip('\n')
                 elif key == "WARNWEEKS":
-                    warnweeks = value
+                    warnweeks = value.rstrip('\n')
         except Exception:
             err = get_exception()
             self.module.fail_json(msg="failed to read /etc/default/passwd: %s" % str(err))
@@ -1325,11 +1325,11 @@ class SunOS(User):
                             continue
                         fields[1] = self.password
                         fields[2] = str(int(time.time() / 86400))
-                        if minweeks is not None:
+                        if minweeks:
                             fields[3] = str(int(minweeks) * 7)
-                        if maxweeks is not None:
+                        if maxweeks:
                             fields[4] = str(int(maxweeks) * 7)
-                        if warnweeks is not None:
+                        if warnweeks:
                             fields[5] = str(int(warnweeks) * 7)
                         line = ':'.join(fields)
                         lines.append('%s\n' % line)
@@ -1419,11 +1419,11 @@ class SunOS(User):
                             continue
                         fields[1] = self.password
                         fields[2] = str(int(time.time() / 86400))
-                        if minweeks is not None:
+                        if minweeks:
                             fields[3] = str(int(minweeks) * 7)
-                        if maxweeks is not None:
+                        if maxweeks:
                             fields[4] = str(int(maxweeks) * 7)
-                        if warnweeks is not None:
+                        if warnweeks:
                             fields[5] = str(int(warnweeks) * 7)
                         line = ':'.join(fields)
                         lines.append('%s\n' % line)
