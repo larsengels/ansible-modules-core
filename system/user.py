@@ -1235,6 +1235,29 @@ class SunOS(User):
     distribution = None
     SHADOWFILE = '/etc/shadow'
 
+    def get_password_defaults(self):
+        # Read password aging defaults
+        try:
+            minweeks = ''
+            maxweeks = ''
+            warnweeks = ''
+            for line in open("/etc/default/passwd", 'r'):
+                line = line.strip()
+                if (line.startswith('#') or line == ''):
+                    continue
+                key, value = line.split('=')
+                if key == "MINWEEKS":
+                    minweeks = value
+                elif key == "MAXWEEKS":
+                    maxweeks = value
+                elif key == "WARNWEEKS":
+                    warnweeks = value
+        except Exception:
+            err = get_exception()
+            self.module.fail_json(msg="failed to read /etc/default/passwd: %s" % str(err))
+
+        return (minweeks, maxweeks, warnweeks)
+
     def remove_user(self):
         cmd = [self.module.get_bin_path('userdel', True)]
         if self.remove:
@@ -1292,6 +1315,7 @@ class SunOS(User):
         if not self.module.check_mode:
             # we have to set the password by editing the /etc/shadow file
             if self.password is not None:
+                minweeks, maxweeks, warnweeks = self.get_password_defaults()
                 try:
                     lines = []
                     for line in open(self.SHADOWFILE, 'rb').readlines():
@@ -1301,6 +1325,12 @@ class SunOS(User):
                             continue
                         fields[1] = self.password
                         fields[2] = str(int(time.time() / 86400))
+                        if minweeks is not None:
+                            fields[3] = str(int(minweeks) * 7)
+                        if maxweeks is not None:
+                            fields[4] = str(int(maxweeks) * 7)
+                        if warnweeks is not None:
+                            fields[5] = str(int(warnweeks) * 7)
                         line = ':'.join(fields)
                         lines.append('%s\n' % line)
                     open(self.SHADOWFILE, 'w+').writelines(lines)
@@ -1379,6 +1409,7 @@ class SunOS(User):
         if self.update_password == 'always' and self.password is not None and info[1] != self.password:
             (rc, out, err) = (0, '', '')
             if not self.module.check_mode:
+                minweeks, maxweeks, warnweeks = self.get_password_defaults()
                 try:
                     lines = []
                     for line in open(self.SHADOWFILE, 'rb').readlines():
@@ -1388,12 +1419,17 @@ class SunOS(User):
                             continue
                         fields[1] = self.password
                         fields[2] = str(int(time.time() / 86400))
+                        if minweeks is not None:
+                            fields[3] = str(int(minweeks) * 7)
+                        if maxweeks is not None:
+                            fields[4] = str(int(maxweeks) * 7)
+                        if warnweeks is not None:
+                            fields[5] = str(int(warnweeks) * 7)
                         line = ':'.join(fields)
                         lines.append('%s\n' % line)
                     open(self.SHADOWFILE, 'w+').writelines(lines)
                     rc = 0
-                except Exception:
-                    err = get_exception()
+                except Exception, err:
                     self.module.fail_json(msg="failed to update users password: %s" % str(err))
 
         return (rc, out, err)
