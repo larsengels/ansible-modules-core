@@ -1430,6 +1430,7 @@ class SunOS(User):
                     open(self.SHADOWFILE, 'w+').writelines(lines)
                     rc = 0
                 except Exception, err:
+                    err = get_exception()
                     self.module.fail_json(msg="failed to update users password: %s" % str(err))
 
         return (rc, out, err)
